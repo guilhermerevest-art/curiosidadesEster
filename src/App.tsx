@@ -221,6 +221,7 @@ export default function App() {
       onVoltar={voltar}
       onAbrirTema={(temaId) => abrirTema(temaId)}
       onRemoverFavorito={aoRemover}
+      onExplorarTemas={() => setTela({ nome: "temas" })}
     />
   );
 }

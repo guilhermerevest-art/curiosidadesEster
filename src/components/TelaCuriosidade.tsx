@@ -135,14 +135,14 @@ export function TelaCuriosidade({
   return (
     <div className="min-h-full flex flex-col">
       <header
-        className="sticky top-0 z-10 backdrop-blur-md bg-slate-950/70 border-b"
+        className="sticky top-0 z-10 backdrop-blur-md bg-app/80 border-b"
         style={{ borderBottomColor: `${tema.cor}55` }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             type="button"
             onClick={onVoltar}
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-300 hover:bg-slate-800"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-app-2 hover:bg-card-2"
             aria-label="Voltar"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -152,11 +152,11 @@ export function TelaCuriosidade({
               <span className="text-xl" aria-hidden>
                 {tema.emoji}
               </span>
-              <h2 className="font-semibold text-slate-100 truncate">
+              <h2 className="font-semibold text-app truncate">
                 {tema.nome}
               </h2>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-app-3 mt-0.5">
               Progresso {Math.min(indiceVista, total)}/{total}
             </p>
           </div>
@@ -170,7 +170,7 @@ export function TelaCuriosidade({
             {Math.min(indiceVista, total)}/{total}
           </span>
         </div>
-        <div className="h-1 w-full bg-slate-900">
+        <div className="h-1 w-full bg-card-2">
           <div
             className="h-full transition-[width] duration-500 ease-out"
             style={{
@@ -209,7 +209,7 @@ export function TelaCuriosidade({
             "fixed top-20 right-4 z-20 flex items-center justify-center w-11 h-11 rounded-full border backdrop-blur-md shadow-lg",
             ehFavorito
               ? "bg-rose-500/20 border-rose-500/50 text-rose-300"
-              : "bg-slate-900/80 border-slate-700 text-slate-300",
+              : "bg-card/80 border-app-2 text-app-2",
             animandoFav ? "heart-pulse" : "",
           ].join(" ")}
           aria-label={ehFavorito ? "Remover dos favoritos" : "Favoritar"}
@@ -230,12 +230,12 @@ export function TelaCuriosidade({
         </button>
       </div>
 
-      <footer className="sticky bottom-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 p-4">
+      <footer className="sticky bottom-0 bg-app/90 backdrop-blur-md border-t border-app p-4">
         <div className="max-w-md mx-auto flex items-stretch gap-3">
           <button
             type="button"
             onClick={dispararJaSabia}
-            className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 font-medium hover:bg-slate-800 active:scale-[0.98] transition"
+            className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl border border-app-2 bg-card text-app-2 font-medium hover:bg-card-2 active:scale-[0.98] transition"
           >
             <CheckCircle2 className="w-4 h-4" />
             Já sabia
@@ -243,7 +243,7 @@ export function TelaCuriosidade({
           <button
             type="button"
             onClick={dispararCompartilhar}
-            className="flex items-center justify-center w-12 h-12 rounded-2xl border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 active:scale-[0.98] transition"
+            className="flex items-center justify-center w-12 h-12 rounded-2xl border border-app-2 bg-card text-app-2 hover:bg-card-2 active:scale-[0.98] transition"
             aria-label="Compartilhar"
           >
             <Share2 className="w-4 h-4" />
@@ -259,7 +259,7 @@ export function TelaCuriosidade({
           </button>
         </div>
         {esgotouNaoVistas && total > 0 && (
-          <p className="mt-3 text-center text-xs text-slate-400">
+          <p className="mt-3 text-center text-xs text-app-3">
             Você já viu todas as {total} curiosidades deste tema. Vamos
             repassá-las!
           </p>

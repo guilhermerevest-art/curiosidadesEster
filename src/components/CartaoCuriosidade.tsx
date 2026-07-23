@@ -1,6 +1,7 @@
 import type { Curiosidade, Tema } from "../lib/tipos";
 import { ChipTema } from "./ChipTema";
 import { PipDificuldade } from "./PipDificuldade";
+import { Particulas } from "./Particulas";
 
 interface CartaoCuriosidadeProps {
   tema: Tema;
@@ -61,17 +62,18 @@ export function CartaoCuriosidade({
       }}
     >
       <div className="face relative">
-        <div className="flex items-center justify-between mb-5 gap-3">
+        <Particulas cor={tema.cor} quantidade={7} />
+        <div className="relative z-10 flex items-center justify-between mb-5 gap-3">
           <ChipTema tema={tema} />
           <PipDificuldade nivel={curiosidade.nivel} cor={tema.cor} />
         </div>
         <p
-          className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400 mb-3"
+          className="relative z-10 text-[11px] font-medium uppercase tracking-[0.14em] text-app-3 mb-3"
           aria-label={`Curiosidade ${numeroAtual} de ${total}`}
         >
           Curiosidade #{numeroAtual} de {total} · {tema.nome}
         </p>
-        <p className="curiosity-text text-balance text-[1.25rem] sm:text-[1.45rem] leading-[1.45] text-slate-50">
+        <p className="relative z-10 curiosity-text text-balance text-[1.25rem] sm:text-[1.45rem] leading-[1.45] text-app">
           {grupos.map((g, i) => (
             <span
               key={`${curiosidade.id}-${i}`}

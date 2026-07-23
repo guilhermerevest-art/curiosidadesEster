@@ -1,5 +1,6 @@
 import { ArrowLeft, Heart } from "lucide-react";
 import type { Curiosidade, Tema } from "../lib/tipos";
+import { EmptyFavoritos } from "./EmptyFavoritos";
 
 interface TelaFavoritosProps {
   favoritos: Curiosidade[];
@@ -7,6 +8,7 @@ interface TelaFavoritosProps {
   onVoltar: () => void;
   onAbrirTema: (temaId: string) => void;
   onRemoverFavorito: (curiosidade: Curiosidade) => void;
+  onExplorarTemas: () => void;
 }
 
 interface Grupo {
@@ -20,6 +22,7 @@ export function TelaFavoritos({
   onVoltar,
   onAbrirTema,
   onRemoverFavorito,
+  onExplorarTemas,
 }: TelaFavoritosProps) {
   const grupos: Grupo[] = (() => {
     const mapa = new Map<string, Curiosidade[]>();
@@ -38,22 +41,22 @@ export function TelaFavoritos({
 
   return (
     <div className="min-h-full">
-      <header className="sticky top-0 z-10 backdrop-blur-md bg-slate-950/70 border-b border-slate-800/80">
+      <header className="sticky top-0 z-10 backdrop-blur-md bg-app/80 border-b border-app">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             type="button"
             onClick={onVoltar}
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-300 hover:bg-slate-800"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-app-2 hover:bg-card-2"
             aria-label="Voltar"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 flex-1">
             <Heart className="w-5 h-5 text-rose-400" />
-            <h2 className="font-semibold text-slate-100">Favoritos</h2>
+            <h2 className="font-semibold text-app">Favoritos</h2>
           </div>
           {favoritos.length > 0 && (
-            <span className="text-xs text-slate-400 tabular-nums">
+            <span className="text-xs text-app-3 tabular-nums">
               {favoritos.length} {favoritos.length === 1 ? "item" : "itens"}
             </span>
           )}
@@ -62,14 +65,7 @@ export function TelaFavoritos({
 
       <div className="p-5 pb-20">
         {favoritos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-20 text-slate-400 gap-2">
-            <Heart className="w-10 h-10 text-slate-600" />
-            <p className="text-base">Nenhum favorito ainda</p>
-            <p className="text-sm max-w-xs">
-              Toque no ícone de coração nas suas curiosidades favoritas para
-              vê-las aqui.
-            </p>
-          </div>
+          <EmptyFavoritos onExplorar={onExplorarTemas} />
         ) : (
           <div className="space-y-6">
             {grupos.map(({ tema, itens }) => (
@@ -77,7 +73,7 @@ export function TelaFavoritos({
                 <button
                   type="button"
                   onClick={() => onAbrirTema(tema.id)}
-                  className="flex items-center gap-2 mb-2 text-sm font-semibold text-slate-200 hover:text-white"
+                  className="flex items-center gap-2 mb-2 text-sm font-semibold text-app-2 hover:text-app"
                 >
                   <span className="text-xl" aria-hidden>
                     {tema.emoji}
@@ -97,22 +93,19 @@ export function TelaFavoritos({
                   {itens.map((c) => (
                     <li
                       key={c.id}
-                      className="rounded-xl border bg-slate-900/70 p-4 flex items-start gap-3"
+                      className="rounded-xl border bg-card p-4 flex items-start gap-3"
                       style={{ borderColor: `${tema.cor}40` }}
                     >
-                      <p className="flex-1 text-sm text-slate-200 leading-relaxed">
+                      <p className="flex-1 text-sm text-app-2 leading-relaxed">
                         {c.texto}
                       </p>
                       <button
                         type="button"
                         onClick={() => onRemoverFavorito(c)}
-                        className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800"
+                        className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-app-3 hover:text-rose-400 hover:bg-card-2"
                         aria-label="Remover dos favoritos"
                       >
-                        <Heart
-                          className="w-4 h-4"
-                          fill="currentColor"
-                        />
+                        <Heart className="w-4 h-4" fill="currentColor" />
                       </button>
                     </li>
                   ))}

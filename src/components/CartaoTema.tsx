@@ -1,5 +1,6 @@
 import type { Tema } from "../lib/tipos";
 import { BarraProgresso } from "./BarraProgresso";
+import { SeloConquista } from "./SeloConquista";
 
 interface CartaoTemaProps {
   tema: Tema;
@@ -16,11 +17,17 @@ export function CartaoTema({
   favoritos,
   onClick,
 }: CartaoTemaProps) {
+  const completo = total > 0 && vistas >= total;
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group text-left flex flex-col gap-3 p-4 rounded-2xl bg-slate-900/70 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+      className={[
+        "group text-left flex flex-col gap-3 p-4 rounded-2xl bg-card border transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0",
+        completo
+          ? "border-yellow-400/40 hover:border-yellow-400/70"
+          : "border-app hover:border-app-2",
+      ].join(" ")}
     >
       <div className="flex items-start justify-between gap-2">
         <div
@@ -29,17 +36,18 @@ export function CartaoTema({
         >
           <span aria-hidden>{tema.emoji}</span>
         </div>
-        {favoritos > 0 && (
-          <span className="text-xs text-yellow-400 font-medium px-2 py-1 rounded-full bg-yellow-400/10">
-            ★ {favoritos}
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1">
+          {completo && <SeloConquista cor={tema.cor} />}
+          {favoritos > 0 && (
+            <span className="text-xs text-yellow-400 font-medium px-2 py-1 rounded-full bg-yellow-400/10">
+              ★ {favoritos}
+            </span>
+          )}
+        </div>
       </div>
       <div>
-        <h3 className="font-semibold text-slate-100 leading-tight">
-          {tema.nome}
-        </h3>
-        <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+        <h3 className="font-semibold text-app leading-tight">{tema.nome}</h3>
+        <p className="text-xs text-app-3 mt-0.5 line-clamp-2">
           {tema.descricao}
         </p>
       </div>
@@ -47,7 +55,7 @@ export function CartaoTema({
         atual={vistas}
         total={total}
         cor={tema.cor}
-        etiqueta={vistas === total && total > 0 ? "Completo" : "Vistas"}
+        etiqueta={completo ? "Completo" : "Vistas"}
       />
     </button>
   );
