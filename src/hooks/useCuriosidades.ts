@@ -17,6 +17,7 @@ const dados = carregarDados();
 
 interface UseCuriosidades {
   temas: Tema[];
+  curiosidades: Curiosidade[];
   temaPorId: (id: string) => Tema | undefined;
   doTema: (temaId: string) => Curiosidade[];
   curiosidadePorId: (id: string) => Curiosidade | undefined;
@@ -85,6 +86,7 @@ export function useCuriosidades(): UseCuriosidades {
 
   return {
     temas,
+    curiosidades: dadosEstaticos.curiosidades,
     temaPorId,
     doTema,
     curiosidadePorId,

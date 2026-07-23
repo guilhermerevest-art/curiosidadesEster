@@ -9,9 +9,21 @@
     @apply h-full;
   }
 
+  :root {
+    --fonte-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --fonte-base: "Inter", system-ui, sans-serif;
+    --tamanho-base: 16px;
+  }
+
+  html {
+    font-size: var(--tamanho-base);
+  }
+
   body {
-    @apply m-0 font-sans antialiased text-slate-100 bg-slate-950;
+    @apply m-0 antialiased text-slate-100 bg-slate-950;
+    font-family: var(--fonte-base);
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
   * {
@@ -22,6 +34,10 @@
     @apply select-none;
     -webkit-touch-callout: none;
   }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-offset-slate-950 ring-sky-400;
+  }
 }
 
 @layer components {
@@ -30,5 +46,189 @@
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-slate-600/60 rounded-full;
+  }
+
+  .font-display {
+    font-family: var(--fonte-display);
+    font-optical-sizing: auto;
+  }
+
+  .cartao-3d {
+    perspective: 1200px;
+  }
+  .cartao-3d > .face {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Drop cap "editorial" — primeira letra bem maior, sem atrapalhar o ritmo. */
+.curiosity-text {
+  font-family: var(--fonte-display);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+
+.curiosity-text::first-letter {
+  font-weight: 700;
+  color: currentColor;
+  font-size: 3.5rem;
+  line-height: 0.95;
+  float: left;
+  padding: 0.25rem 0.65rem 0 0;
+  background: linear-gradient(
+    180deg,
+    currentColor 0%,
+    currentColor 70%,
+    color-mix(in srgb, currentColor 35%, transparent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (min-width: 640px) {
+  .curiosity-text::first-letter {
+    font-size: 4.5rem;
+  }
+}
+
+/* Reveal por linha do texto da curiosidade (stagger). */
+.reveal-line {
+  display: inline-block;
+  animation: revealUp 420ms cubic-bezier(0.16, 0.84, 0.32, 1) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Transição 3D do cartão: sai e entra com translate + rotação. */
+.card-next {
+  animation: cardNext 320ms cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+.card-next-in {
+  animation: cardNextIn 380ms cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+.card-prev {
+  animation: cardPrev 320ms cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+.card-prev-in {
+  animation: cardPrevIn 380ms cubic-bezier(0.16, 0.84, 0.32, 1) both;
+}
+
+@keyframes cardNext {
+  to {
+    opacity: 0;
+    transform: translateX(70px) rotateY(-14deg) scale(0.98);
+  }
+}
+@keyframes cardNextIn {
+  from {
+    opacity: 0;
+    transform: translateX(-70px) rotateY(14deg) scale(0.98);
+  }
+}
+@keyframes cardPrev {
+  to {
+    opacity: 0;
+    transform: translateX(-70px) rotateY(14deg) scale(0.98);
+  }
+}
+@keyframes cardPrevIn {
+  from {
+    opacity: 0;
+    transform: translateX(70px) rotateY(-14deg) scale(0.98);
+  }
+}
+
+/* Favorito: coração voador + pulse do botão. */
+.heart-fly {
+  position: absolute;
+  pointer-events: none;
+  animation: heartFly 700ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes heartFly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-50%, -130%) scale(1.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -260%) scale(1.1);
+  }
+}
+
+.heart-pulse {
+  animation: heartPulse 320ms ease-out;
+}
+@keyframes heartPulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Confete: nada aqui, usa canvas-confette em lib/celebration.ts. */
+
+/* Toast compartilhamento. */
+.toast {
+  animation: toastIn 200ms ease-out, toastOut 240ms ease-in 1700ms forwards;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+}
+
+/* Acessibilidade: respeita prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal-line {
+    animation: none !important;
   }
 }

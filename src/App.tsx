@@ -1,9 +1,13 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TelaTemas } from "./components/TelaTemas";
 import { TelaCuriosidade } from "./components/TelaCuriosidade";
 import { TelaFavoritos } from "./components/TelaFavoritos";
 import { useCuriosidades } from "./hooks/useCuriosidades";
 import { useProgresso } from "./hooks/useProgresso";
+import { useStreak } from "./lib/streak";
+import { useCuriosidadeDoDia } from "./lib/curiosidadeDoDia";
+import { useSaudacao } from "./hooks/useSaudacao";
+import { celebrar } from "./lib/celebration";
 import type { Curiosidade } from "./lib/tipos";
 
 type Tela =
@@ -11,17 +15,25 @@ type Tela =
   | { nome: "tema"; temaId: string }
   | { nome: "favoritos"; voltarPara: "temas" | "tema"; temaId?: string };
 
+function percentual(vistas: number, total: number): number {
+  if (total === 0) return 0;
+  return Math.round((vistas / total) * 100);
+}
+
 export default function App() {
   const { temas, temaPorId, doTema, curiosidadePorId, sorteiaNaoVista } =
     useCuriosidades();
   const {
-    progresso: _progresso,
+    progresso,
     getTema,
     registrarVista,
     registrarJaSabia,
     alternarFavorito,
     ehFavorito,
   } = useProgresso();
+  const streak = useStreak();
+  const curiosidadeDoDia = useCuriosidadeDoDia();
+  const saudacao = useSaudacao();
 
   const [tela, setTela] = useState<Tela>({ nome: "temas" });
   const [atualId, setAtualId] = useState<string | null>(null);
@@ -42,13 +54,35 @@ export default function App() {
     const m: Record<string, number> = {};
     for (const t of temas) m[t.id] = getTema(t.id).vistas.length;
     return m;
-  }, [temas, getTema]);
+  }, [temas, getTema, progresso]);
 
   const favoritosPorTema = useMemo(() => {
     const m: Record<string, number> = {};
     for (const t of temas) m[t.id] = getTema(t.id).favoritos.length;
     return m;
-  }, [temas, getTema]);
+  }, [temas, getTema, progresso]);
+
+  const totalVistas = useMemo(
+    () => Object.values(vistasPorTema).reduce((s, n) => s + n, 0),
+    [vistasPorTema],
+  );
+  const totalCuriosidades = useMemo(
+    () => Object.values(contagemPorTema).reduce((s, n) => s + n, 0),
+    [contagemPorTema],
+  );
+
+  // Dispara confete quando cruzamos 25, 50 ou 100% em algum tema.
+  useEffect(() => {
+    for (const t of temas) {
+      const total = contagemPorTema[t.id] ?? 0;
+      const vistas = vistasPorTema[t.id] ?? 0;
+      const p = percentual(vistas, total);
+      if (total === 0) continue;
+      for (const marco of [25, 50, 100] as const) {
+        if (p >= marco) celebrar(t.id, marco, t.cor);
+      }
+    }
+  }, [temas, contagemPorTema, vistasPorTema]);
 
   const abrirTema = useCallback(
     (temaId: string) => {
@@ -69,7 +103,14 @@ export default function App() {
     if (!nova) return;
     registrarVista(tela.temaId, nova.id);
     setAtualId(nova.id);
-  }, [tela, atualId, getTema, sorteiaNaoVista, curiosidadePorId, registrarVista]);
+  }, [
+    tela,
+    atualId,
+    getTema,
+    sorteiaNaoVista,
+    curiosidadePorId,
+    registrarVista,
+  ]);
 
   const jaSabia = useCallback(() => {
     if (tela.nome !== "tema" || !atualId) return;
@@ -99,6 +140,16 @@ export default function App() {
     [],
   );
 
+  // CTA "Curiosidade de hoje" e "próxima" — abrem a curiosidade específica
+  // entrando no tema correspondente e fixando o id atual.
+  const abrirCuriosidade = useCallback(
+    (c: Curiosidade) => {
+      setAtualId(c.id);
+      setTela({ nome: "tema", temaId: c.temaId });
+    },
+    [],
+  );
+
   if (tela.nome === "temas") {
     return (
       <TelaTemas
@@ -106,8 +157,16 @@ export default function App() {
         contagemPorTema={contagemPorTema}
         vistasPorTema={vistasPorTema}
         favoritosPorTema={favoritosPorTema}
+        totalVistas={totalVistas}
+        totalCuriosidades={totalCuriosidades}
+        streakAtual={streak.atual}
+        streakMelhor={streak.melhor}
+        saudacao={saudacao}
+        curiosidadeDoDia={curiosidadeDoDia ?? null}
+        temaDoDia={curiosidadeDoDia ? temaPorId(curiosidadeDoDia.temaId) ?? null : null}
         onAbrirTema={abrirTema}
         onAbrirFavoritos={() => abrirFavoritos("temas")}
+        onAbrirCuriosidade={abrirCuriosidade}
       />
     );
   }
@@ -124,12 +183,15 @@ export default function App() {
       : null;
     const total = contagemPorTema[tela.temaId] ?? 0;
     const naoVistasRestantes =
-      total - progTema.vistas.filter((id) => !progTema.jaSabia.includes(id)).length;
+      total -
+      progTema.vistas.filter((id) => !progTema.jaSabia.includes(id)).length;
+    const numeroAtual = progTema.vistas.indexOf(atualId ?? "") + 1;
     return (
       <TelaCuriosidade
         tema={tema}
         atual={curiosidadeAtual}
         total={total}
+        numeroAtual={numeroAtual > 0 ? numeroAtual : Math.min(progTema.vistas.length + 1, total)}
         indiceVista={progTema.vistas.length}
         ehFavorito={atualId ? ehFavorito(tela.temaId, atualId) : false}
         esgotouNaoVistas={naoVistasRestantes <= 0}
