@@ -7,11 +7,10 @@ interface ChipTemaProps {
 export function ChipTema({ tema }: ChipTemaProps) {
   return (
     <div
-      className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium"
+      className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold text-white"
       style={{
-        backgroundColor: `${tema.cor}1F`,
-        borderColor: `${tema.cor}55`,
-        color: tema.cor,
+        backgroundColor: tema.cor,
+        borderColor: tema.cor,
       }}
     >
       <span aria-hidden className="text-base">

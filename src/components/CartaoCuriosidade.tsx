@@ -8,12 +8,11 @@ interface CartaoCuriosidadeProps {
   curiosidade: Curiosidade;
   numeroAtual: number; // 1-based, "Curiosidade #13"
   total: number;
-  direcao: "next" | "prev" | null; // controla a animação de entrada
-  // quando um novo cartão entra, "entrando" = true; quando sai, "saindo" = true
+  direcao: "next" | "prev" | null;
   estado: "entrando" | "saindo";
 }
 
-const TAMANHO_GRUPO = 6; // palavras por linha animada
+const TAMANHO_GRUPO = 6;
 
 function agruparPalavras(texto: string): string[] {
   const palavras = texto.split(/(\s+)/);
@@ -51,15 +50,16 @@ export function CartaoCuriosidade({
   return (
     <article
       className={[
-        "cartao-3d relative w-full max-w-md rounded-3xl border p-6 sm:p-8 shadow-2xl",
+        "cartao-3d cartao-tema relative w-full max-w-md rounded-3xl border p-6 sm:p-8 shadow-2xl",
         "transition-shadow",
         classeEstado,
       ].join(" ")}
-      style={{
-        backgroundColor: `${tema.cor}1A`,
-        borderColor: `${tema.cor}55`,
-        boxShadow: `0 24px 60px -20px ${tema.cor}40, 0 4px 12px rgba(0,0,0,0.25)`,
-      }}
+      style={
+        {
+          ["--tema-cor" as never]: tema.cor,
+          boxShadow: `0 24px 60px -20px ${tema.cor}40, 0 4px 12px rgba(0,0,0,0.25)`,
+        } as React.CSSProperties
+      }
     >
       <div className="face relative">
         <Particulas cor={tema.cor} quantidade={7} />
@@ -68,12 +68,12 @@ export function CartaoCuriosidade({
           <PipDificuldade nivel={curiosidade.nivel} cor={tema.cor} />
         </div>
         <p
-          className="relative z-10 text-[11px] font-medium uppercase tracking-[0.14em] text-app-3 mb-3"
+          className="relative z-10 text-[11px] font-medium uppercase tracking-[0.14em] texto-suave mb-3"
           aria-label={`Curiosidade ${numeroAtual} de ${total}`}
         >
           Curiosidade #{numeroAtual} de {total} · {tema.nome}
         </p>
-        <p className="relative z-10 curiosity-text text-balance text-[1.25rem] sm:text-[1.45rem] leading-[1.45] text-app">
+        <p className="relative z-10 curiosity-text text-balance text-[1.25rem] sm:text-[1.45rem] leading-[1.45]">
           {grupos.map((g, i) => (
             <span
               key={`${curiosidade.id}-${i}`}

@@ -31,12 +31,13 @@ export function PipDificuldade({ nivel, cor }: PipDificuldadeProps) {
             key={i}
             className="h-1.5 w-4 rounded-full"
             style={{
-              backgroundColor: i <= preenchidos ? cor : "rgba(148,163,184,0.25)",
+              backgroundColor: i <= preenchidos ? cor : "currentColor",
+              opacity: i <= preenchidos ? 1 : 0.25,
             }}
           />
         ))}
       </div>
-      <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+      <span className="text-[10px] font-medium uppercase tracking-wider texto-suave">
         {ROTULO[nivel]}
       </span>
     </div>
