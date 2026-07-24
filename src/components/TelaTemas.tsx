@@ -1,7 +1,14 @@
-import { ArrowRight, Flame, Heart, Sparkles, Sun } from "lucide-react";
+import { ArrowRight, Clock, Flame, Heart, Shield, Sparkles, Sun } from "lucide-react";
 import type { Curiosidade, Tema } from "../lib/tipos";
 import { CartaoTema } from "./CartaoTema";
 import { ControlesUI } from "./ControlesUI";
+
+interface NivelInfo {
+  indice: number;
+  titulo: string;
+  xpMin: number;
+  xpMax: number;
+}
 
 interface TelaTemasProps {
   temas: Tema[];
@@ -12,11 +19,19 @@ interface TelaTemasProps {
   totalCuriosidades: number;
   streakAtual: number;
   streakMelhor: number;
+  escudos: number;
+  escudoUsado: boolean;
+  ganhouEscudo: boolean;
+  xp: number;
+  nivel: NivelInfo;
+  proximoNivel: NivelInfo | null;
+  pctNivel: number;
   saudacao: { texto: string; icone: string };
   curiosidadeDoDia: Curiosidade | null;
   temaDoDia: Tema | null;
   onAbrirTema: (temaId: string) => void;
   onAbrirFavoritos: () => void;
+  onAbrirHistorico: () => void;
   onAbrirCuriosidade: (curiosidade: Curiosidade) => void;
 }
 
@@ -29,11 +44,19 @@ export function TelaTemas({
   totalCuriosidades,
   streakAtual,
   streakMelhor,
+  escudos,
+  escudoUsado,
+  ganhouEscudo,
+  xp,
+  nivel,
+  proximoNivel,
+  pctNivel,
   saudacao,
   curiosidadeDoDia,
   temaDoDia,
   onAbrirTema,
   onAbrirFavoritos,
+  onAbrirHistorico,
   onAbrirCuriosidade,
 }: TelaTemasProps) {
   const totalFavoritos = Object.values(favoritosPorTema).reduce(
@@ -61,40 +84,105 @@ export function TelaTemas({
           Aprenda uma curiosidade nova a cada toque.
         </p>
 
-        <div className="mt-4 flex items-stretch gap-2">
-          {streakAtual > 0 && (
-            <div
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30"
-              aria-label={`Streak de ${streakAtual} dias`}
-            >
-              <Flame className="w-4 h-4 text-amber-400" />
-              <div className="leading-tight">
-                <div className="text-sm font-semibold text-amber-200 tabular-nums">
-                  {streakAtual} {streakAtual === 1 ? "dia" : "dias"}
-                </div>
-                {streakMelhor > streakAtual && (
-                  <div className="text-[10px] text-amber-300/70">
-                    Melhor: {streakMelhor}
+        {/* Streak + XP + escudos */}
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="flex items-stretch gap-2">
+            {streakAtual > 0 && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30"
+                aria-label={`Streak de ${streakAtual} dias`}
+              >
+                <Flame className="w-4 h-4 text-amber-400" />
+                <div className="leading-tight">
+                  <div className="text-sm font-semibold text-amber-200 tabular-nums">
+                    {streakAtual} {streakAtual === 1 ? "dia" : "dias"}
                   </div>
-                )}
+                  {streakMelhor > streakAtual && (
+                    <div className="text-[10px] text-amber-300/70">
+                      Melhor: {streakMelhor}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {escudos > 0 && (
+              <div
+                className={[
+                  "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all",
+                  escudoUsado
+                    ? "bg-sky-500/10 border-sky-500/30"
+                    : "bg-sky-500/5 border-sky-500/20",
+                ].join(" ")}
+                aria-label={`${escudos} escudos de streak`}
+                title="Escudos blindam seu streak se você esquecer de abrir o app em um dia"
+              >
+                <Shield className="w-4 h-4 text-sky-400" />
+                <div className="leading-tight">
+                  <div className="text-sm font-semibold text-sky-200 tabular-nums">
+                    {escudos}
+                  </div>
+                  <div className="text-[10px] text-sky-300/70">escudo{escudos !== 1 ? "s" : ""}</div>
+                </div>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={onAbrirFavoritos}
+              className="relative ml-auto flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-app hover:border-app-2 transition-colors"
+              aria-label={`Abrir favoritos (${totalFavoritos})`}
+            >
+              <Heart className="w-4 h-4 text-rose-400" />
+              <span className="text-sm font-medium text-app-2">Favoritos</span>
+              {totalFavoritos > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white px-1">
+                  {totalFavoritos}
+                </span>
+              )}
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onAbrirHistorico}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-card border border-app hover:border-app-2 transition-colors"
+            >
+              <Clock className="w-4 h-4 text-sky-400" />
+              <span className="text-sm font-medium text-app-2">Histórico</span>
+            </button>
+          </div>
+
+          {/* XP / Nível */}
+          <div className="rounded-xl bg-card border border-app p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-app">{nivel.titulo}</span>
+                <span className="text-[10px] uppercase tracking-wider text-app-3">
+                  Nível {nivel.indice + 1}
+                </span>
+              </div>
+              <div className="text-[11px] text-app-3 tabular-nums">
+                {xp} XP{proximoNivel ? ` / ${proximoNivel.xpMin}` : " (max)"}
               </div>
             </div>
-          )}
-          <button
-            type="button"
-            onClick={onAbrirFavoritos}
-            className="relative ml-auto flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-app hover:border-app-2 transition-colors"
-            aria-label={`Abrir favoritos (${totalFavoritos})`}
-          >
-            <Heart className="w-4 h-4 text-rose-400" />
-            <span className="text-sm font-medium text-app-2">Favoritos</span>
-            {totalFavoritos > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white px-1">
-                {totalFavoritos}
-              </span>
-            )}
-          </button>
+            <div className="h-1.5 w-full rounded-full bg-card-2 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-[width] duration-500 ease-out"
+                style={{
+                  width: `${pctNivel}%`,
+                  background: "linear-gradient(90deg, #F472B6, #FBBF24, #34D399)",
+                }}
+              />
+            </div>
+          </div>
         </div>
+
+        {/* Banner de novo escudo */}
+        {ganhouEscudo && (
+          <div className="mt-3 rounded-xl bg-sky-500/15 border border-sky-500/30 px-3 py-2 text-sm text-sky-100 flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Você ganhou um escudo de streak!
+          </div>
+        )}
       </header>
 
       {/* Bloco "Curiosidade de hoje" */}

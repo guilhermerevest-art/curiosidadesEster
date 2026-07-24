@@ -2,6 +2,7 @@ import type { Curiosidade, Tema } from "../lib/tipos";
 import { ChipTema } from "./ChipTema";
 import { PipDificuldade } from "./PipDificuldade";
 import { Particulas } from "./Particulas";
+import { ImageHero } from "./ImageHero";
 
 interface CartaoCuriosidadeProps {
   tema: Tema;
@@ -10,6 +11,7 @@ interface CartaoCuriosidadeProps {
   total: number;
   direcao: "next" | "prev" | null;
   estado: "entrando" | "saindo";
+  imagemUrl?: string;
 }
 
 const TAMANHO_GRUPO = 6;
@@ -42,6 +44,7 @@ export function CartaoCuriosidade({
   numeroAtual,
   total,
   estado,
+  imagemUrl,
 }: CartaoCuriosidadeProps) {
   const grupos = agruparPalavras(curiosidade.texto);
   const classeEstado =
@@ -50,7 +53,7 @@ export function CartaoCuriosidade({
   return (
     <article
       className={[
-        "cartao-3d cartao-tema relative w-full max-w-md rounded-3xl border p-6 sm:p-8 shadow-2xl",
+        "cartao-3d cartao-tema relative w-full max-w-md rounded-3xl border overflow-hidden shadow-2xl",
         "transition-shadow",
         classeEstado,
       ].join(" ")}
@@ -61,9 +64,18 @@ export function CartaoCuriosidade({
         } as React.CSSProperties
       }
     >
-      <div className="face relative">
+      {imagemUrl && (
+        <div className="relative">
+          <ImageHero
+            src={imagemUrl}
+            alt={`Imagem representando: ${curiosidade.texto.slice(0, 80)}...`}
+            altura={180}
+          />
+        </div>
+      )}
+      <div className={`face relative ${imagemUrl ? "p-5 sm:p-6" : "p-6 sm:p-8"}`}>
         <Particulas cor={tema.cor} quantidade={7} />
-        <div className="relative z-10 flex items-center justify-between mb-5 gap-3">
+        <div className="relative z-10 flex items-center justify-between mb-4 gap-3">
           <ChipTema tema={tema} />
           <PipDificuldade nivel={curiosidade.nivel} cor={tema.cor} />
         </div>
@@ -73,7 +85,7 @@ export function CartaoCuriosidade({
         >
           Curiosidade #{numeroAtual} de {total} · {tema.nome}
         </p>
-        <p className="relative z-10 curiosity-text text-balance text-[1.25rem] sm:text-[1.45rem] leading-[1.45]">
+        <p className="relative z-10 curiosity-text text-balance text-[1.2rem] sm:text-[1.4rem] leading-[1.45]">
           {grupos.map((g, i) => (
             <span
               key={`${curiosidade.id}-${i}`}

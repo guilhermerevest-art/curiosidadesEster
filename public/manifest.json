@@ -1,0 +1,55 @@
+{
+  "name": "Curioso — Curiosidades para cada dia",
+  "short_name": "Curioso",
+  "description": "Descubra uma curiosidade nova a cada toque, organizada por temas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Curiosidade do dia",
+      "short_name": "Hoje",
+      "description": "Veja a curiosidade do dia",
+      "url": "/?acao=hoje",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Favoritos",
+      "short_name": "Favoritos",
+      "description": "Suas curiosidades favoritas",
+      "url": "/?acao=favoritos",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Histórico",
+      "short_name": "Histórico",
+      "description": "Suas curiosidades vistas",
+      "url": "/?acao=historico",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Explorar temas",
+      "short_name": "Temas",
+      "description": "Veja os 12 temas disponíveis",
+      "url": "/?acao=temas",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
+  "share_target": {
+    "action": "/?acao=compartilhar",
+    "method": "GET",
+    "params": { "title": "titulo", "text": "texto", "url": "url" }
+  }
+}

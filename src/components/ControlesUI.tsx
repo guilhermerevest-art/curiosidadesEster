@@ -1,10 +1,12 @@
-import { Moon, Sun, MonitorSmartphone, Minus, Plus } from "lucide-react";
+import { Moon, Sun, MonitorSmartphone, Minus, Plus, Volume2, VolumeX } from "lucide-react";
 import { useTema } from "../hooks/useTema";
 import { useTamanhoFonte } from "../hooks/useTamanhoFonte";
+import { useSom } from "../hooks/useSom";
 
 export function ControlesUI() {
   const { modo, atual, alternar } = useTema();
   const { nivel, diminuir, aumentar } = useTamanhoFonte();
+  const { habilitado, setHabilitado } = useSom();
 
   const IconeTema =
     modo === "auto" ? MonitorSmartphone : atual === "light" ? Moon : Sun;
@@ -17,6 +19,19 @@ export function ControlesUI() {
 
   return (
     <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => setHabilitado(!habilitado)}
+        aria-label={habilitado ? "Desligar sons" : "Ligar sons"}
+        title={habilitado ? "Som ligado" : "Som desligado"}
+        className="flex items-center justify-center w-8 h-8 rounded-lg bg-card border border-app text-app-2 hover:border-app-2 transition-colors"
+      >
+        {habilitado ? (
+          <Volume2 className="w-3.5 h-3.5" />
+        ) : (
+          <VolumeX className="w-3.5 h-3.5" />
+        )}
+      </button>
       <button
         type="button"
         onClick={diminuir}

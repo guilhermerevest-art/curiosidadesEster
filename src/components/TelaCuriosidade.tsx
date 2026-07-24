@@ -4,26 +4,36 @@ import {
   ArrowRight,
   CheckCircle2,
   Heart,
+  Pause,
   Share2,
+  Volume2,
+  Image as ImageIcon,
 } from "lucide-react";
 import type { Curiosidade, Tema } from "../lib/tipos";
 import { CartaoCuriosidade } from "./CartaoCuriosidade";
 import { Toast } from "./Toast";
+import { PullToRefreshIndicator } from "./PullToRefreshIndicator";
 import { useHaptics } from "../hooks/useHaptics";
 import { useShare } from "../hooks/useShare";
+import { useTTS } from "../hooks/useTTS";
+import { useSom } from "../hooks/useSom";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { renderStoryCard } from "../lib/storyCard";
 
 interface TelaCuriosidadeProps {
   tema: Tema;
   atual: Curiosidade | null;
   total: number;
-  numeroAtual: number; // 1-based para "Curiosidade #N"
+  numeroAtual: number;
   indiceVista: number;
   ehFavorito: boolean;
   esgotouNaoVistas: boolean;
+  imagemUrl?: string;
   onVoltar: () => void;
   onProxima: () => void;
   onJaSabia: () => void;
   onFavoritar: () => void;
+  onAleatoria: () => void;
 }
 
 const DURACAO_ANIM_SAIDA = 280;
@@ -37,54 +47,63 @@ export function TelaCuriosidade({
   indiceVista,
   ehFavorito,
   esgotouNaoVistas,
+  imagemUrl,
   onVoltar,
   onProxima,
   onJaSabia,
   onFavoritar,
+  onAleatoria,
 }: TelaCuriosidadeProps) {
   const haptics = useHaptics();
-  const { compartilhar, copiado } = useShare();
+  const { compartilharTexto, compartilharArquivo, copiado, compartilhado } = useShare();
+  const tts = useTTS();
+  const som = useSom();
 
   const [estado, setEstado] = useState<"entrando" | "saindo">("entrando");
   const [animandoFav, setAnimandoFav] = useState(false);
-  const [arrastando, setArrastando] = useState<{
-    x: number;
-    rot: number;
-  } | null>(null);
+  const [arrastando, setArrastando] = useState<{ x: number; rot: number } | null>(null);
+  const [ripple, setRipple] = useState<{ x: number; y: number } | null>(null);
+  const [gerandoStory, setGerandoStory] = useState(false);
 
   const toqueInicioX = useRef<number | null>(null);
   const toqueInicioT = useRef<number | null>(null);
-  const botaoFavRef = useRef<HTMLButtonElement | null>(null);
+  const ultimoToqueT = useRef<number>(0);
+  const contadorToque = useRef<number>(0);
+  const timerDouble = useRef<number | null>(null);
 
-  // quando o id muda, reset da animação de entrada
+  // Pull-to-refresh: trocar para curiosidade aleatória
+  const ptr = usePullToRefresh(async () => {
+    haptics.vibrar("conquista");
+    som.tick();
+    onAleatoria();
+  });
+
   useEffect(() => {
     setEstado("entrando");
+    if (atual) tts.carregar(atual.texto);
+    // se tava falando, para
+    if (tts.falando || tts.pausado) tts.parar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atual?.id]);
 
-  // se vier vazio, nada
   if (!atual) {
     return (
-      <div className="min-h-full flex items-center justify-center text-slate-400">
+      <div className="min-h-full flex items-center justify-center text-app-3">
         Carregando…
       </div>
     );
   }
 
-  function iniciarToque(e: React.TouchEvent) {
-    toqueInicioX.current = e.touches[0]?.clientX ?? null;
-    toqueInicioT.current = Date.now();
-  }
-
   function moverToque(e: React.TouchEvent) {
-    if (toqueInicioX.current === null) return;
+    if (toqueInicioX.current === null || ptr.arrastando) return;
     const x = e.touches[0]?.clientX ?? 0;
     const delta = x - toqueInicioX.current;
-    // limite para não arrastar absurdo
     const limit = Math.max(-140, Math.min(140, delta));
-    setArrastando({
-      x: limit,
-      rot: limit / 12,
-    });
+    // vibração sutil ao passar 50% do threshold (feedback de "compromisso")
+    if (Math.abs(delta) > LIMIAR_SWIPE && Math.abs(delta) < LIMIAR_SWIPE + 10) {
+      haptics.vibrar("swipe-curto");
+    }
+    setArrastando({ x: limit, rot: limit / 12 });
   }
 
   function terminarToque(e: React.TouchEvent) {
@@ -95,14 +114,48 @@ export function TelaCuriosidade({
     toqueInicioX.current = null;
     toqueInicioT.current = null;
     setArrastando(null);
-    // se arrastou longe OU foi um flick rápido, conta como próximo
     if (Math.abs(delta) > LIMIAR_SWIPE || (delta < 0 && duracao < 250)) {
       dispararProxima();
     }
   }
 
+  // double-tap = "Já sabia"
+  function onTapCartao(e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) {
+    const agora = Date.now();
+    if (agora - ultimoToqueT.current < 280) {
+      contadorToque.current += 1;
+      if (contadorToque.current >= 1) {
+        contadorToque.current = 0;
+        if (timerDouble.current) {
+          window.clearTimeout(timerDouble.current);
+          timerDouble.current = null;
+        }
+        // feedback visual ripple
+        let cx = 0, cy = 0;
+        const me = e as React.MouseEvent<HTMLElement>;
+        if ("clientX" in me && typeof me.clientX === "number") {
+          cx = me.clientX;
+          cy = me.clientY;
+        } else {
+          const target = e.currentTarget as HTMLElement;
+          const r = target.getBoundingClientRect();
+          cx = r.left + r.width / 2;
+          cy = r.top + r.height / 2;
+        }
+        setRipple({ x: cx, y: cy });
+        window.setTimeout(() => setRipple(null), 600);
+        haptics.vibrar("ribble");
+        dispararJaSabia();
+      }
+    } else {
+      contadorToque.current = 0;
+      ultimoToqueT.current = agora;
+    }
+  }
+
   function dispararProxima() {
-    haptics.vibrar("tap");
+    haptics.vibrar("swice-longo");
+    som.pageTurn();
     setEstado("saindo");
     window.setTimeout(onProxima, DURACAO_ANIM_SAIDA);
   }
@@ -114,26 +167,69 @@ export function TelaCuriosidade({
   }
 
   function dispararFavoritar() {
-    haptics.vibrar("favorito");
+    if (ehFavorito) haptics.vibrar("desfavoritar");
+    else haptics.vibrar("favorito");
     setAnimandoFav(true);
     window.setTimeout(() => setAnimandoFav(false), 350);
     onFavoritar();
   }
 
-  function dispararCompartilhar() {
+  function dispararCompartilharTexto() {
     haptics.vibrar("tap");
     const texto = `Você sabia? ${atual?.texto ?? ""} — via Curioso`;
-    void compartilhar(texto);
+    void compartilharTexto(texto);
   }
 
-  // visual do cartão: se estamos arrastando, segue o dedo; se está entrando, usa a classe
+  async function dispararCompartilharImagem() {
+    if (!atual || gerandoStory) return;
+    haptics.vibrar("tap");
+    setGerandoStory(true);
+    try {
+      const blob = await renderStoryCard({ curiosidade: atual, tema });
+      const arquivo = new File([blob], `curioso-${tema.id}.png`, {
+        type: "image/png",
+      });
+      await compartilharArquivo(arquivo, "Curioso", atual.texto);
+    } catch {
+      // silencioso
+    } finally {
+      setGerandoStory(false);
+    }
+  }
+
+  function dispararTTS() {
+    if (!tts.disponivel) return;
+    if (tts.falando && !tts.pausado) {
+      haptics.vibrar("selecionado");
+      tts.pause();
+    } else if (tts.pausado) {
+      haptics.vibrar("selecionado");
+      tts.play();
+    } else {
+      haptics.vibrar("tap");
+      if (atual) tts.carregar(atual.texto);
+      tts.play();
+    }
+  }
+
   const transformArrasto =
     arrastando !== null
       ? `translateX(${arrastando.x}px) rotate(${arrastando.rot}deg)`
       : undefined;
 
   return (
-    <div className="min-h-full flex flex-col">
+    <div
+      className="min-h-full flex flex-col"
+      onTouchStart={ptr.bind.onTouchStart}
+      onTouchMove={(e) => {
+        moverToque(e);
+        ptr.bind.onTouchMove(e);
+      }}
+      onTouchEnd={(e) => {
+        terminarToque(e);
+        ptr.bind.onTouchEnd();
+      }}
+    >
       <header
         className="sticky top-0 z-10 backdrop-blur-md bg-app/80 border-b"
         style={{ borderBottomColor: `${tema.cor}55` }}
@@ -181,16 +277,20 @@ export function TelaCuriosidade({
         </div>
       </header>
 
+      <PullToRefreshIndicator
+        progresso={ptr.progresso}
+        carregando={ptr.arrastando && ptr.puxou}
+        cor={tema.cor}
+      />
+
       <div className="flex-1 flex items-center justify-center p-5">
         <div
           className="w-full max-w-md select-none"
-          onTouchStart={iniciarToque}
-          onTouchMove={moverToque}
-          onTouchEnd={terminarToque}
           style={{
             transform: transformArrasto,
             transition: arrastando ? "none" : "transform 280ms ease",
           }}
+          onClick={onTapCartao}
         >
           <CartaoCuriosidade
             tema={tema}
@@ -199,10 +299,21 @@ export function TelaCuriosidade({
             total={total}
             direcao={null}
             estado={estado}
+            imagemUrl={imagemUrl}
           />
         </div>
+        {ripple && (
+          <span
+            className="ripple"
+            aria-hidden
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              backgroundColor: tema.cor,
+            }}
+          />
+        )}
         <button
-          ref={botaoFavRef}
           type="button"
           onClick={dispararFavoritar}
           className={[
@@ -231,20 +342,51 @@ export function TelaCuriosidade({
       </div>
 
       <footer className="sticky bottom-0 bg-app/90 backdrop-blur-md border-t border-app p-4">
-        <div className="max-w-md mx-auto flex items-stretch gap-3">
+        <div className="max-w-md mx-auto flex items-stretch gap-2">
           <button
             type="button"
             onClick={dispararJaSabia}
             className="flex-1 flex items-center justify-center gap-2 h-12 rounded-2xl border border-app-2 bg-card text-app-2 font-medium hover:bg-card-2 active:scale-[0.98] transition"
+            aria-label="Marcar como já sabia"
           >
             <CheckCircle2 className="w-4 h-4" />
             Já sabia
           </button>
           <button
             type="button"
-            onClick={dispararCompartilhar}
+            onClick={dispararTTS}
+            disabled={!tts.disponivel}
+            className="flex items-center justify-center w-12 h-12 rounded-2xl border border-app-2 bg-card text-app-2 hover:bg-card-2 active:scale-[0.98] transition disabled:opacity-40"
+            aria-label={
+              tts.falando && !tts.pausado
+                ? "Pausar leitura"
+                : tts.pausado
+                  ? "Continuar leitura"
+                  : "Ouvir"
+            }
+            title={!tts.disponivel ? "Leitura em voz alta indisponível" : undefined}
+          >
+            {tts.falando && !tts.pausado ? (
+              <Pause className="w-4 h-4" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={dispararCompartilharImagem}
+            disabled={gerandoStory}
+            className="flex items-center justify-center w-12 h-12 rounded-2xl border border-app-2 bg-card text-app-2 hover:bg-card-2 active:scale-[0.98] transition disabled:opacity-40"
+            aria-label="Compartilhar como imagem"
+            title="Compartilhar como imagem"
+          >
+            <ImageIcon className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={dispararCompartilharTexto}
             className="flex items-center justify-center w-12 h-12 rounded-2xl border border-app-2 bg-card text-app-2 hover:bg-card-2 active:scale-[0.98] transition"
-            aria-label="Compartilhar"
+            aria-label="Compartilhar texto"
           >
             <Share2 className="w-4 h-4" />
           </button>
@@ -258,13 +400,27 @@ export function TelaCuriosidade({
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
+        <p className="mt-2 text-center text-[10px] text-app-3 opacity-70">
+          Dica: arraste para baixo para uma surpresa, ou toque duas vezes
+          para marcar como já sabia.
+        </p>
         {esgotouNaoVistas && total > 0 && (
-          <p className="mt-3 text-center text-xs text-app-3">
+          <p className="mt-2 text-center text-xs text-app-3">
             Você já viu todas as {total} curiosidades deste tema. Vamos
             repassá-las!
           </p>
         )}
-        {copiado && <Toast mensagem="Texto copiado para a área de transferência" />}
+        {(copiado || compartilhado) && (
+          <Toast
+            mensagem={
+              compartilhado
+                ? "Compartilhado!"
+                : gerandoStory
+                  ? "Gerando imagem…"
+                  : "Texto copiado para a área de transferência"
+            }
+          />
+        )}
       </footer>
     </div>
   );
